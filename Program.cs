@@ -1,9 +1,14 @@
+using Microsoft.EntityFrameworkCore;
+using OrderManagement.Data;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddDbContext<AppDbContext>(options =>
+    options.UseSqlite("Data Source=DBOrderManagement.sb"));
 
 var app = builder.Build();
 
