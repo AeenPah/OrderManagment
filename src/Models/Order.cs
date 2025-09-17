@@ -27,4 +27,6 @@ public class Order
 
     [ForeignKey(nameof(CustomerId))]
     public Customer Customer { get; set; } = null!;
+
+    public List<OrderItem> OrderItems { get; set; } = new();
 }

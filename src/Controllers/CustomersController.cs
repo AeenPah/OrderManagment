@@ -48,7 +48,6 @@ public class CustomersController : ControllerBase
         if (customerDTO is null)
             return NotFound($"Customer with ID {id} not found.");
 
-
         return Ok(customerDTO);
     }
 
@@ -120,16 +119,7 @@ public class CustomersController : ControllerBase
 
         await _dbContext.SaveChangesAsync();
 
-        var customerDTO = new CustomerDTO
-              (
-                  customer.CustomerId,
-                  customer.Username,
-                  customer.Email,
-                  customer.WalletBalance,
-                  customer.CreatedAt
-              );
-
-        return Ok(customerDTO);
+        return NoContent();
     }
 
     [HttpDelete("{id:int}")]
