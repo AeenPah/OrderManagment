@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace OrderManagement.DTOs;
 
 public record CustomerDTO(
@@ -10,14 +12,28 @@ public record CustomerDTO(
 
 public class CreateCustomerDto
 {
-    public required string Username { set; get; }
-    public required string Password { set; get; }
-    public required string Email { set; get; }
+    [Required]
+    [StringLength(50, MinimumLength = 4)]
+    public string Username { set; get; } = null!;
+
+    [Required]
+    [EmailAddress]
+    public string Email { set; get; } = null!;
+
+    [Required]
+    [MinLength(4)]
+    [RegularExpression(@"^(?=.*[A-Za-z])(?=.*\d).+$",
+        ErrorMessage = "Password must contain letters and numbers.")]
+    public required string Password { set; get; } = null!;
 }
 
 public class UpdateCustomerDto
 {
-    public required string Username { set; get; }
-    public required string Password { set; get; }
-    public required string Email { set; get; }
+    [Required]
+    [StringLength(50, MinimumLength = 4)]
+    public string Username { set; get; } = null!;
+
+    [Required]
+    [EmailAddress]
+    public string Email { set; get; } = null!;
 }
