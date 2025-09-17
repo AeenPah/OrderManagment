@@ -138,16 +138,4 @@ public class CustomersController : ControllerBase
 
         return NoContent();
     }
-
-
-    // [HttpGet]
-    // public async Task<IActionResult> GetCustomers(int page = 1, int pageSize = 10)
-    // {
-    //     var customers = await _dbContext.Customer
-    //         .Skip((page - 1) * pageSize)
-    //         .Take(pageSize)
-    //         .ToListAsync();
-
-    //     return Ok(customers);
-    // }
 }
