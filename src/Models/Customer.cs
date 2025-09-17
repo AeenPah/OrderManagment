@@ -5,7 +5,7 @@ namespace OrderManagement.Models;
 public class Customer
 {
     [Key]
-    public int Id { set; get; }
+    public int CustomerId { set; get; }
 
     [Required]
     public string Username { set; get; } = null!;

@@ -5,7 +5,7 @@ using OrderManagement.DTOs;
 using OrderManagement.Models;
 using OrderManagement.Utils;
 
-namespace OrderManagement;
+namespace OrderManagement.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
