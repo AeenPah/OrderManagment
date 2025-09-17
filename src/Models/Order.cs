@@ -3,14 +3,14 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace OrderManagement.Models;
 
+public enum OrderStatus
+{
+    Pending,
+    Payed,
+    Cancelled
+}
 public class Order
 {
-    public enum OrderStatus
-    {
-        Pending,
-        Payed,
-        Cancelled
-    }
 
     [Key]
     public int OrderId { set; get; }
@@ -18,10 +18,10 @@ public class Order
     [Required]
     public int CustomerId { set; get; }
 
-    public OrderStatus Status = OrderStatus.Pending;
+    public OrderStatus Status { get; set; } = OrderStatus.Pending;
 
     [Required]
-    public decimal TotalAmount;
+    public decimal TotalAmount { get; set; }
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 

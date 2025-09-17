@@ -8,7 +8,7 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlite("Data Source=DBOrderManagement.sb"));
+    options.UseSqlite("Data Source=DBOrderManagement.db"));
 
 var app = builder.Build();
 

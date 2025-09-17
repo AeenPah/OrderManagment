@@ -13,14 +13,15 @@ public class OrdersController : ControllerBase
     private readonly AppDbContext _dbContext;
     public OrdersController(AppDbContext appDbContext) { this._dbContext = appDbContext; }
 
-
     [HttpGet]
     public async Task<IActionResult> GetOrders()
     {
         var orders = await _dbContext.Orders
             .Include(o => o.OrderItems)
             .Select(o => new OrderDTO(
+                o.OrderId,
                 o.CustomerId,
+                o.TotalAmount,
                 o.OrderItems.Select(oi => new OrderItemDTO(oi.ProductName, oi.Quantity, oi.Price)).ToList()
             ))
             .ToListAsync();
@@ -35,12 +36,14 @@ public class OrdersController : ControllerBase
             .Include(o => o.OrderItems)
             .Where(o => o.OrderId == id)
             .Select(o => new OrderDTO(
+                o.OrderId,
                 o.CustomerId,
+                o.TotalAmount,
                 o.OrderItems.Select(oi => new OrderItemDTO(oi.ProductName, oi.Quantity, oi.Price)).ToList()
             ))
             .ToListAsync();
 
-        if (order is null)
+        if (order.Count() == 0)
         {
             return NotFound($"Order with ID {id} not found.");
         }
@@ -56,33 +59,32 @@ public class OrdersController : ControllerBase
 
         var existedCustomer = await _dbContext.Customer
                    .FirstOrDefaultAsync(c => c.CustomerId == body.CustomerId);
-        if (existedCustomer is not null)
+        if (existedCustomer is null)
             return NotFound($"Customer with ID {body.CustomerId} not found.");
-
 
         Order order = new Order
         {
             CustomerId = body.CustomerId,
-            TotalAmount = 0
+            TotalAmount = 0,
+            OrderItems = body.OrderItems.Select(oi => new OrderItem
+            {
+                ProductName = oi.ProductName,
+                Quantity = oi.Quantity,
+                Price = oi.Price
+            }).ToList()
         };
 
-        List<OrderItem> orderItem = order.OrderItems
-            .Select(oi => new OrderItem
-            {
-                OrderId = order.OrderId,
-                Price = oi.Price,
-                ProductName = oi.ProductName,
-                Quantity = oi.Quantity
-            }).ToList();
+        // calculate total amount price
+        order.TotalAmount = order.OrderItems.Sum(oi => oi.Price * oi.Quantity);
 
         _dbContext.Orders.Add(order);
-        _dbContext.OrderItems.AddRange(orderItem);
-
         await _dbContext.SaveChangesAsync();
 
         OrderDTO orderDTO = new OrderDTO
         (
+            order.OrderId,
             order.CustomerId,
+            order.TotalAmount,
             order.OrderItems
                 .Select(oi => new OrderItemDTO(oi.ProductName, oi.Quantity, oi.Price))
                 .ToList()
@@ -122,10 +124,27 @@ public class OrdersController : ControllerBase
             Price = oi.Price
         }).ToList();
 
+        // calculate total amount price
+        existingOrder.TotalAmount = newItems.Sum(oi => oi.Price * oi.Quantity);
+
         _dbContext.OrderItems.AddRange(newItems);
 
         await _dbContext.SaveChangesAsync();
 
         return NoContent();
     }
+
+    [HttpDelete("{id:int}")]
+    public async Task<IActionResult> DeleteOrder(int id)
+    {
+        var order = await _dbContext.Orders.FirstOrDefaultAsync(o => o.OrderId == id);
+        if (order is null)
+            return NotFound($"Order with ID {id} not found.");
+
+        _dbContext.Orders.Remove(order);
+        await _dbContext.SaveChangesAsync();
+
+        return NoContent();
+    }
+
 }

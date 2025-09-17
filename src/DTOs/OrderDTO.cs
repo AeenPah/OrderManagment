@@ -1,5 +1,5 @@
 using System.ComponentModel.DataAnnotations;
-using static OrderManagement.Models.Order;
+using OrderManagement.Models;
 
 namespace OrderManagement.DTOs;
 
@@ -9,7 +9,9 @@ public record OrderItemDTO(
     decimal Price
 );
 public record OrderDTO(
+    int OrderId,
     int CustomerId,
+    decimal TotalAmount,
     [Required]
     List<OrderItemDTO> OrderItems
 );
@@ -20,9 +22,11 @@ public class CreateOrderItem
     public string ProductName { get; set; } = null!;
 
     [Required]
+    [Range(1, int.MaxValue, ErrorMessage = "Quantity must be positive.")]
     public int Quantity { get; set; }
 
     [Required]
+    [Range(0.01, double.MaxValue, ErrorMessage = "Price must be positive.")]
     public decimal Price { get; set; }
 }
 public class CreateOrderDTO
