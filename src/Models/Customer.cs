@@ -19,7 +19,7 @@ public class Customer
     [Required]
     public string Email { set; get; } = null!;
 
-    public int WalletBalance { set; get; } = 0;
+    public decimal WalletBalance { set; get; } = 0;
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 }

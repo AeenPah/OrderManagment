@@ -18,7 +18,7 @@ public class OrderItem
     public int Quantity { set; get; }
 
     [Required]
-    public int Price { set; get; }
+    public decimal Price { set; get; }
 
     [ForeignKey(nameof(OrderId))]
     public Order Order { get; set; } = null!;
