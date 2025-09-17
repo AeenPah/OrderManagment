@@ -17,34 +17,62 @@ public class CustomersController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> GetCustomers()
     {
-        List<Customer> customers = await _dbContext.Customer.ToListAsync();
+        List<CustomerDTO> customersDTO = await _dbContext.Customer
+            .Select(c => new CustomerDTO
+            (
+                c.CustomerId,
+                c.Username,
+                c.Email,
+                c.WalletBalance,
+                c.CreatedAt
+            )).ToListAsync();
 
-        return Ok(customers);
+        return Ok(customersDTO);
     }
 
-    [HttpGet("{id}")]
+    [HttpGet("{id:int}")]
     public async Task<IActionResult> GetByIdCustomer(int id)
     {
-        Customer customer = await _dbContext.Customer.FirstOrDefaultAsync(c => c.CustomerId == id);
-        if (customer is null)
-        {
-            // do something 
-            return BadRequest();
-        }
+        var customerDTO = await _dbContext.Customer
+            .Where(c => c.CustomerId == id)
+            .Select(c => new CustomerDTO
+                (
+                    c.CustomerId,
+                    c.Username,
+                    c.Email,
+                    c.WalletBalance,
+                    c.CreatedAt
+                ))
+            .FirstOrDefaultAsync();
 
-        return Ok(new
-        {
-            customer.Username,
-            customer.CreatedAt,
-            customer.Email,
-            customer.WalletBalance,
-        });
+        if (customerDTO is null)
+            return NotFound($"Customer with ID {id} not found.");
+
+
+        return Ok(customerDTO);
     }
 
     [HttpPost]
-    public async Task<IActionResult> PostCustomer([FromBody] PostCustomer body)
+    public async Task<IActionResult> PostCustomer([FromBody] CreateCustomerDto body)
     {
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
+
+        // Avoid create duplicated customer
+        var existedCustomer = await _dbContext.Customer
+            .FirstOrDefaultAsync(c => c.Username == body.Username || c.Email == body.Email);
+        if (existedCustomer is not null)
+        {
+            if (existedCustomer.Username == body.Username)
+                return Conflict("Customer with the same username already exists.");
+
+            if (existedCustomer.Email == body.Email)
+                return Conflict("Customer with the same email already exists.");
+        }
+
+        // Hash Password
         var (hashedPassword, salt) = PasswordHasher.Hash(body.Password);
+
         Customer customer = new Customer
         {
             Username = body.Username,
@@ -56,35 +84,69 @@ public class CustomersController : ControllerBase
         _dbContext.Customer.Add(customer);
         await _dbContext.SaveChangesAsync();
 
-        return Ok();
+        var customerDTO = new CustomerDTO
+        (
+            customer.CustomerId,
+            customer.Username,
+            customer.Email,
+            customer.WalletBalance,
+            customer.CreatedAt
+        );
+
+        return Created($"/customers/{customer.CustomerId}", customerDTO);
     }
 
-    // [HttpPut("{id}")]
-    // public async Task<IActionResult> PutCustomer(int id)
-    // {
+    [HttpPut("{id}")]
+    public async Task<IActionResult> PutCustomer(int id, [FromBody] UpdateCustomerDto body)
+    {
+        var customer = await _dbContext.Customer.FirstOrDefaultAsync(c => c.CustomerId == id);
+        if (customer is null)
+            return NotFound($"Customer with ID {id} not found.");
 
-    // }
+        // Avoid create duplicated customer
+        var existedCustomer = await _dbContext.Customer
+            .FirstOrDefaultAsync(c => (c.Username == body.Username || c.Email == body.Email) && c.CustomerId != id);
+        if (existedCustomer is not null)
+        {
+            if (existedCustomer.Username == body.Username)
+                return Conflict("Customer with the same username already exists.");
 
-    [HttpDelete("{id}")]
+            if (existedCustomer.Email == body.Email)
+                return Conflict("Customer with the same email already exists.");
+        }
+
+        customer.Username = body.Username;
+        customer.Email = body.Email;
+
+        await _dbContext.SaveChangesAsync();
+
+        var customerDTO = new CustomerDTO
+              (
+                  customer.CustomerId,
+                  customer.Username,
+                  customer.Email,
+                  customer.WalletBalance,
+                  customer.CreatedAt
+              );
+
+        return Ok(customerDTO);
+    }
+
+    [HttpDelete("{id:int}")]
     public async Task<IActionResult> DeleteCustomer(int id)
     {
-        Customer customer = await _dbContext.Customer.FirstOrDefaultAsync(c => c.CustomerId == id);
+        var customer = await _dbContext.Customer.FirstOrDefaultAsync(c => c.CustomerId == id);
         if (customer is null)
-        {
-            // do something 
-            return BadRequest();
-        }
-        Order order = await _dbContext.Orders.FirstOrDefaultAsync(o => o.CustomerId == id);
-        if (order is null)
-        {
-            // do something 
-            return BadRequest("user has order");
-        }
+            return NotFound($"Customer with ID {id} not found.");
+
+        var hasOrder = await _dbContext.Orders.FirstOrDefaultAsync(o => o.CustomerId == id);
+        if (hasOrder is not null)
+            return BadRequest("Customer has order and cannot be deleted.");
 
         _dbContext.Customer.Remove(customer);
         await _dbContext.SaveChangesAsync();
 
-        return Ok();
+        return NoContent();
     }
 
 
