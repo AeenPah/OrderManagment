@@ -14,10 +14,14 @@ public class OrdersController : ControllerBase
     public OrdersController(AppDbContext appDbContext) { this._dbContext = appDbContext; }
 
     [HttpGet]
-    public async Task<IActionResult> GetOrders()
+    public async Task<IActionResult> GetOrders(int page = 1, int pageSize = 10)
     {
-        var orders = await _dbContext.Orders
+        var totalCount = await _dbContext.Orders.CountAsync();
+
+        List<OrderDTO> ordersDTO = await _dbContext.Orders
             .Include(o => o.OrderItems)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
             .Select(o => new OrderDTO(
                 o.OrderId,
                 o.CustomerId,
@@ -26,7 +30,9 @@ public class OrdersController : ControllerBase
             ))
             .ToListAsync();
 
-        return Ok(orders);
+        var response = new PaginatedResponse<OrderDTO>(ordersDTO, totalCount, page, pageSize);
+
+        return Ok(response);
     }
 
     [HttpGet("{id:int}")]

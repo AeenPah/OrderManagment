@@ -15,9 +15,13 @@ public class CustomersController : ControllerBase
     public CustomersController(AppDbContext appDbContext) { this._dbContext = appDbContext; }
 
     [HttpGet]
-    public async Task<IActionResult> GetCustomers()
+    public async Task<IActionResult> GetCustomers(int page = 1, int pageSize = 10)
     {
+        var totalCount = await _dbContext.Customer.CountAsync();
+
         List<CustomerDTO> customersDTO = await _dbContext.Customer
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
             .Select(c => new CustomerDTO
             (
                 c.CustomerId,
@@ -27,7 +31,9 @@ public class CustomersController : ControllerBase
                 c.CreatedAt
             )).ToListAsync();
 
-        return Ok(customersDTO);
+        var response = new PaginatedResponse<CustomerDTO>(customersDTO, totalCount, page, pageSize);
+
+        return Ok(response);
     }
 
     [HttpGet("{id:int}")]
